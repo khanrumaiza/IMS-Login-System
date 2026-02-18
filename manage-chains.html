@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Manage Chains</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f4f6f9;
+    }
+
+    .sidebar {
+      height: 100vh;
+      background: #0d6efd;
+      color: white;
+      padding: 20px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 12px;
+      color: white;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .card-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+
+      <!-- SIDEBAR -->
+      <div class="col-md-3 sidebar">
+        <h4>Invoice</h4>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="groups.html">Manage Groups</a>
+        <a href="manage-chains.html"><b>Manage Chain</b></a>
+        <a href="#">Manage Brands</a>
+        <a href="#">Manage SubZones</a>
+        <a href="#">Manage Estimates</a>
+        <a href="#">Manage Invoices</a>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <div class="col-md-9 p-4">
+
+        <h3 class="mb-4">Manage Chain Section</h3>
+
+        <div class="row">
+
+          <!-- TABLE -->
+          <div class="col-md-8">
+            <div class="card-box">
+
+              <h5>Total Chains: <span id="count"></span></h5>
+
+              <table class="table mt-3">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Group</th>
+                    <th>Company</th>
+                    <th>GSTN</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                  </tr>
+                </thead>
+
+                <tbody id="list"></tbody>
+
+              </table>
+
+            </div>
+          </div>
+
+          <!-- ADD CHAIN -->
+          <div class="col-md-4">
+
+            <div class="card-box">
+
+              <h5>Add Chain</h5>
+
+              <select id="groupSelect" class="form-control mb-2"></select>
+
+              <input id="company" class="form-control mb-2" placeholder="Company name">
+
+              <input id="gstn" class="form-control mb-2" placeholder="GSTN">
+
+              <button class="btn btn-primary w-100" onclick="addChain()">Add Chain</button>
+
+            </div>
+
+            <br>
+
+            <div class="card-box">
+              <h5>Filter by Group</h5>
+              <select id="filterGroup" class="form-control" onchange="filterChains()"></select>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    let chains = JSON.parse(localStorage.getItem("chains")) || [];
+
+    function saveChains() {
+      localStorage.setItem("chains", JSON.stringify(chains));
+    }
+
+    function loadGroups() {
+
+      let select = document.getElementById("groupSelect");
+      let filter = document.getElementById("filterGroup");
+
+      select.innerHTML = "<option>Select Group</option>";
+      filter.innerHTML = "<option value=''>All Groups</option>";
+
+      let groups = JSON.parse(localStorage.getItem("groups")) || [];
+
+      groups.forEach(g => {
+        if (g.is_active) {
+          select.innerHTML += `<option>${g.name}</option>`;
+          filter.innerHTML += `<option>${g.name}</option>`;
+        }
+      });
+    }
+
+    function addChain() {
+
+      let group = document.getElementById("groupSelect").value;
+      let company = document.getElementById("company").value;
+      let gstn = document.getElementById("gstn").value;
+
+      if (!group || !company || !gstn) {
+        alert("All fields required");
+        return;
+      }
+
+      let exists = chains.find(c => c.gstn === gstn);
+      if (exists) {
+        alert("GSTN already exists");
+        return;
+      }
+
+      chains.push({
+        id: chains.length + 1,
+        group,
+        company,
+        gstn
+      });
+
+      saveChains();
+      render();
+    }
+
+    function render(data = chains) {
+
+      let list = document.getElementById("list");
+      list.innerHTML = "";
+
+      data.forEach((c, i) => {
+        list.innerHTML += `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${c.group}</td>
+      <td>${c.company}</td>
+      <td>${c.gstn}</td>
+      <td><button class="btn btn-warning btn-sm" onclick="editChain(${i})">Edit</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteChain(${i})">Delete</button></td>
+    </tr>
+    `;
+      });
+
+      document.getElementById("count").innerText = chains.length;
+    }
+
+    function deleteChain(id) {
+      chains.splice(id, 1);
+      saveChains();
+      render();
+    }
+
+    function editChain(id) {
+
+      let company = prompt("Update company", chains[id].company);
+      let gstn = prompt("Update GSTN", chains[id].gstn);
+
+      if (company && gstn) {
+        chains[id].company = company;
+        chains[id].gstn = gstn;
+        saveChains();
+        render();
+      }
+    }
+
+    function filterChains() {
+      let g = document.getElementById("filterGroup").value;
+      if (!g) render();
+      else render(chains.filter(c => c.group === g));
+    }
+
+    loadGroups();
+    render();
+
+  </script>
+
+</body>
+
+</html>
