@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Manage Brands</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #f4f6f9;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 230px;
+            height: 100vh;
+            background:#0d6efd;
+            color: white;
+            padding: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        .sidebar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 2;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .right-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+        }
+
+        button {
+            padding: 8px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .addbtn {
+            background: #0d6efd;
+            width: 100%;
+        }
+
+        .edit {
+            background: orange;
+        }
+
+        .delete {
+            background: red;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h3>Invoice</h3>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="groups.html">Manage Groups</a>
+        <a href="manage-chains.html">Manage Chain</a>
+        <a href="brand-management.html"><b>Manage Brands</b></a>
+        <a href="#">Manage SubZones</a>
+        <a href="#">Manage Estimates</a>
+        <a href="#">Manage Invoices</a>
+    </div>
+
+    <div class="main">
+        <h2>Manage Brands Section</h2>
+
+        <div class="container">
+
+            <!-- TABLE -->
+            <div class="card">
+                <h3>Total Brands: <span id="count">0</span></h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Group</th>
+                            <th>Brand</th>
+                            <th>Company</th>
+                            <th>GSTN</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table"></tbody>
+                </table>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="right-box">
+
+                <div class="box">
+                    <h3>Add Brand</h3>
+
+                    <select id="group"></select>
+
+                    <input type="text" id="brand" placeholder="Brand Name">
+                    <input type="text" id="company" placeholder="Company Name">
+                    <input type="text" id="gstn" placeholder="GSTN">
+
+                    <button class="addbtn" onclick="addBrand()">Add Brand</button>
+                </div>
+
+                <div class="box">
+                    <h3>Filter by Group</h3>
+                    <select id="filter" onchange="filterBrand()"></select>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        let brands = JSON.parse(localStorage.getItem("brands")) || [];
+        let groups = JSON.parse(localStorage.getItem("groups")) || [];
+
+        function save() {
+            localStorage.setItem("brands", JSON.stringify(brands));
+        }
+
+        /* LOAD GROUPS INTO DROPDOWN */
+        function loadGroups() {
+            let groupSelect = document.getElementById("group");
+            let filterSelect = document.getElementById("filter");
+
+            groupSelect.innerHTML = '<option>Select Group</option>';
+            filterSelect.innerHTML = '<option value="">All Groups</option>';
+
+            groups.forEach(g => {
+                groupSelect.innerHTML += `<option value="${g.name}">${g.name}</option>`;
+                filterSelect.innerHTML += `<option value="${g.name}">${g.name}</option>`;
+            });
+        }
+
+        /* RENDER TABLE */
+        function render(data = brands) {
+            let table = "";
+            data.forEach((b, i) => {
+                table += `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${b.group}</td>
+            <td>${b.brand}</td>
+            <td>${b.company}</td>
+            <td>${b.gstn}</td>
+            <td><button class="edit">Edit</button></td>
+            <td><button class="delete" onclick="deleteBrand(${i})">Delete</button></td>
+        </tr>`;
+            });
+
+            document.getElementById("table").innerHTML = table;
+            document.getElementById("count").innerText = data.length;
+        }
+
+        /* ADD BRAND */
+        function addBrand() {
+            let group = document.getElementById("group").value;
+            let brand = document.getElementById("brand").value.trim();
+            let company = document.getElementById("company").value.trim();
+            let gstn = document.getElementById("gstn").value.trim();
+
+            if (group === "Select Group" || !brand) {
+                alert("Select group & enter brand");
+                return;
+            }
+
+            brands.push({ group, brand, company, gstn });
+            save();
+            render();
+        }
+
+        /* DELETE */
+        function deleteBrand(i) {
+            brands.splice(i, 1);
+            save();
+            render();
+        }
+
+        /* FILTER */
+        function filterBrand() {
+            let g = document.getElementById("filter").value;
+            if (g === "") render();
+            else render(brands.filter(b => b.group === g));
+        }
+
+        loadGroups();
+        render();
+
+    </script>
+
+</body>
+
+</html>
